@@ -7,7 +7,7 @@
 #.\riscv32-unknown-elf-ld -T CH32V003.ld --Map final.map CH32V003_LIN_SNIFFER0.O
 #.\riscv32-unknown-elf-objcopy -O ihex a.out CH32V003_LIN_SNIFFER0.hex
 
-
+########################################################################################### WORKS FINE PRINTS TO TERMINAL AND USES CLASSIC 1.3 CHECKSUM
 
 #USARTDIV= (AHB_clk/(16 x baud))  , USARTDIV  goes into BRR register
 #for 9600 baud , (8000000/(16 x 9600)) = 52.0833
@@ -115,9 +115,9 @@
 .equ R32_PFIC_IPRIOR2, 0xE000E401 	#PFIC interrupt priority configuration register
 .equ R32_PFIC_SCTLR, 0xE000ED10 	#PFIC system control register
 
-.equ INTSYSCR, 0x804 			#Interrupt System Control Register
-.equ MTVEC, 0x305 			#Exception Entry Base Address Register
-.equ DBGMCU_CR, 0x7C0  			#Debug MCU Configuration Register (CSR)
+.equ INTSYSCR, 0x804 				#Interrupt System Control Register
+.equ MTVEC, 0x305 					#Exception Entry Base Address Register
+.equ DBGMCU_CR, 0x7C0  				#Debug MCU Configuration Register (CSR)
  
 .equ R32_STK_CTLR, 0xE000F000 		#System count control register 
 .equ R32_STK_SR, 0xE000F004 		#System count status register 
@@ -304,23 +304,23 @@
 .equ  SYSTICK_CTLR_SWIE, (1<<31) 
 
 .equ data_command2 , 0x0d               #0b00001101# data control nibble , 1101  = 0x0D   - EN goes hi=1
-.equ data_command3 , 0xf9		#0b00001001# data control nibble , 1011  = 0x0B   - EN goes low=0
+.equ data_command3 , 0xf9				#0b00001001# data control nibble , 1011  = 0x0B   - EN goes low=0
 .equ inst_command2 , 0x0C               #0b00001100# instruction control nibble ,  led on,EN hi , rs/RW 0    = 1100   = 0x0C
-.equ inst_command3 , 0xf8		#0b00001000# instruction control nibble  , led on, EN lo ,rs/rw 0    = 1000   = 0x08
-.equ LCDWAD , 0x4E 			# 1602 LCD address
+.equ inst_command3 , 0xf8				#0b00001000# instruction control nibble  , led on, EN lo ,rs/rw 0    = 1000   = 0x08
+.equ LCDWAD , 0x4E 						# 1602 LCD address
 .equ buffer,   0x20000004
 .equ buffer1,  0x20000008
 .equ state , 0x2000000C
 .equ input_count,  0x20000010
 .equ kd_gain,  0x20000014
-.equ fraction,  0x20000018		# stores 1 second measure window overflow for slow signals
+.equ fraction,  0x20000018				# stores 1 second measure window overflow for slow signals
 .equ fraction2,  0x2000001C
 .equ result_lo,  0x20000020
 .equ result_hi,  0x20000024
 .equ modulo ,  0x20000028 
 .equ scratch,  0x2000002C
-.equ result1,  0x20000030		# 10 bytes used by print function from 0(mem)
-.equ result2,  0x20000034		# till 9(mem) , 2 bytes in mem1
+.equ result1,  0x20000030				# 
+.equ result2,  0x20000034				# 
 .equ dividend , 0x20000038
 .equ divisor, 0x2000003C
 .equ scratchpad, 0x20000040
@@ -333,9 +333,9 @@
 
 # Bits
 
-.equ LBD,           0x100    		# Bit 8  - LIN Break Detected (write 1 to clear)
+.equ LBD, 0x100    						# Bit 8  - LIN Break Detected (write 1 to clear)
 
-.equ RXNE,          0x20     		# Bit 5  - Receive Data Register Not Empty
+.equ RXNE, 0x20     					# Bit 5  - Receive Data Register Not Empty
 
 .macro push val
   addi sp, sp, -4
@@ -347,17 +347,7 @@
   addi sp, sp, 4
 .endm
 
-.macro pos x y
-  addi sp,sp,-8
-  sw x6,0(sp)
-  sw x7,4(sp)
-  li x6,\y
-  li x7,\x
-  call posi
-  lw x7,4(sp)
-  lw x6,0(sp)
-  addi sp,sp,8
-.endm
+
 
 .macro string address
   addi sp,sp,-4
@@ -375,22 +365,6 @@
   call delayus
   lw t1,0(sp)
   addi sp,sp,4
-.endm
-
-.macro debug tp
-  addi sp,sp,-8
-  sw a5,0(sp)
-  sw gp,4(sp)
-  la a5, result_lo
-  mv gp,\tp
-  sw gp, 0(a5)
-  call convert_to_decimal_signed
-  pos 0,0
-  call displayresult2			# display value in LCD
-  call delay1S				# delay 1 second
-  lw gp,4(sp)
-  lw a5,0(sp)
-  addi sp,sp,8
 .endm
 
 
@@ -475,14 +449,14 @@ vtable:
 .global start
 start:
 
-    	li sp, STACK			# load stack pointer with stack end address
+    li sp, STACK			# load stack pointer with stack end address
 	 
-    	la t0, vtable			#BASEADDR[31:2],The interrupt vector table base address,which needs to be 1KB aligned
-    	ori t0, t0, 3			#BASEADDR[31:2],1: Identify by absolute address,1: Address offset based on interrupt number *4
-    	csrrw zero, mtvec,t0		# write t0 mtvec
+    la t0, vtable			# BASEADDR[31:2],The interrupt vector table base address,which needs to be 1KB aligned
+    ori t0, t0, 3			# BASEADDR[31:2],1: Identify by absolute address,1: Address offset based on interrupt number *4
+    csrrw zero, mtvec,t0	# write t0 mtvec
    	la t0,main
 	csrw	mepc,t0
-          				#csrw	mepc,t0 :mepc updated with address of main
+          					# csrw	mepc,t0 :mepc updated with address of main
 	mret
 
   
@@ -492,45 +466,43 @@ main:
 
 #enable periphrel clocks
 	la x10,R32_RCC_APB2PCENR	# load address of APB2PCENR register to x10 ,for enabling GPIO A,D,C peripherals
-	lw x11,0(x10)			# load contents from peripheral register R32_RCC_APB2PCENR pointed by x10
+	lw x11,0(x10)				# load contents from peripheral register R32_RCC_APB2PCENR pointed by x10
 	li x7,((1<<2)|(1<<4)|(1<<5)|(1<<0)|(1<<14)|(1<<9)|(1<<11))	# 1<<IOPA_EN,1<<IOPC_EN,1<<IOPD_EN,1<<AFIOEN,1<<USART ,1<<ADC enable port A,C,D and AFIO functions,1<<TIM1
-	or x11,x11,x7			# or values 
-	sw x11,0(x10)			# store modified enable values in R32_RCC_APB2PCENR
+	or x11,x11,x7				# or values 
+	sw x11,0(x10)				# store modified enable values in R32_RCC_APB2PCENR
 
 #configure GPIO 
 	la x10,R32_GPIOD_CFGLR		# load pointer x10 with address of R32_GPIOD_CFGLR , GPIO configuration register
-	lw x11,0(x10)			# load contents from register pointed by x10
-	li x7,~((0xf<<20)|(0xf<<24)|(0xf<<16))	#clear pd4,pd5,pd6. we need to setup PD5 & PD6 for usart tx and rx and pd4 for led
-	and x11,x11,x7			# clear pd4,pd5,pd6 mode and cnf bits for selected pin D4,D5,D6
+	lw x11,0(x10)				# load contents from register pointed by x10
+	li x7,~((0xf<<20)|(0xf<<24)|(0xf<<16))	# clear pd4,pd5,pd6. we need to setup PD5 & PD6 for usart tx and rx and pd4 for led
+	and x11,x11,x7				# clear pd4,pd5,pd6 mode and cnf bits for selected pin D4,D5,D6
 	li x7,((0x8<<24)|(0xB<<20)|(0x3<<16))	# pd6 = input with PU/PD,pd5= multiplex pushpull output 50mhz,pd4= normal pushpull output 50hz
-	or x11,x11,x7			# OR value to register
-	sw x11,0(x10)			# store in R32_GPIOD_CFGLR
+	or x11,x11,x7				# OR value to register
+	sw x11,0(x10)				# store in R32_GPIOD_CFGLR
 
 #enable pull up for input	
 	la x10,R32_GPIOD_OUTDR		# enable pullup resistor by setting OUTDR register
-	lw x11,0(x10)			# this setting of GPIO_OUTDR for pullup resistor effects if corresonding pin is selected as input
-	li x7,(1<<6)			#when PD6 is input with resistor selected 1= pullup and 0 = pulldown
+	lw x11,0(x10)				# this setting of GPIO_OUTDR for pullup resistor effects if corresonding pin is selected as input
+	li x7,(1<<6)				# when PD6 is input with resistor selected 1= pullup and 0 = pulldown
 	or x11,x11,x7
 	sw x11,0(x10)
 
 #configure USART baud
 	la x10,R32_USART_BRR		# USART BAUD setting
-	lw x11,0(x10)			# copy R32_USART_BRR to x11
-	li x7,0x300			# baud 10417,Mantissa 0x30, Fraction 0
-	or x11,x11,x7			# or registers
-	sw x11,0(x10)			# store in R32_USART_BRR
+	lw x11,0(x10)				# copy R32_USART_BRR to x11
+	li x7,0x300					# baud 10417,Mantissa 0x30, Fraction 0
+	or x11,x11,x7				# or registers
+	sw x11,0(x10)				# store in R32_USART_BRR
 #enable LIN
 	la x10, R32_USART_CTLR2
 	li x7, (1<<14)          	# LINEN
 	sw x7, 0(x10)
-
-
 #setup UART control and enable	
 	la x10,R32_USART_CTLR1		# load x10 with R32_USART_CTLR1 address
-	lw x11,0(x10)			# load to x11 contents
+	lw x11,0(x10)				# load to x11 contents
 	li x7,(1<<13)|(1<<3)|(1<<2)	# enable USART UE, TX,RX bits		# UE 
 	or x11,x11,x7
-	sw x11,0(x10)			# store back new values
+	sw x11,0(x10)				# store back new values
 
 
 
@@ -538,15 +510,15 @@ main:
 
 
 
-	la x10,name			# load address of label "name" to x10, string to be transmitted
+		la x10,message1			# load address of label "name" to x10, string to be transmitted
 string_loop:
-	lb x8,0(x10)			# load 1 byte from 0 offset of "name"
-	beqz x8,finish			# if byte in x8 null branch to label "finish"
-	call USART_TX			# call subroutine USART_TX to transmit byte
-	addi x10,x10,1			# increase pointer by 1 byte
-	j string_loop			# jump back to label string_loop until null is encountered
+		lb x8,0(x10)			# load 1 byte from 0 offset of "name"
+		beqz x8,finish			# if byte in x8 null branch to label "finish"
+		call USART_TX			# call subroutine USART_TX to transmit byte
+		addi x10,x10,1			# increase pointer by 1 byte
+		j string_loop			# jump back to label string_loop until null is encountered
 finish:
-	call delay			# some delay
+		call delay1S			# some delay
 	
 
 
@@ -558,10 +530,10 @@ wait_break:
     	beqz t1, wait_break
     
     	# Clear LBD flag by writing 0 to it (Standard USART behavior)
-   	la t0, R32_USART_STATR
+   		la t0, R32_USART_STATR
     	lw t1, 0(t0)
     	li t2, ~0x100               # Bitmask to clear bit 8
-	and t1,t1,t2
+		and t1,t1,t2
     	sw t1, 0(t0)
 
     	# 2. Read Sync (0x55) and PID
@@ -591,7 +563,7 @@ data_loop:
     	# 5. Calculate and Compare
     	mv a0, a5                   # a0 = PID for checksum
     	la a1, frame_buffer         # a1 = data pointer
-	addi a1,a1,2		    # frame_buffer + 2 = sync, pid, data starts at 3rd byte 
+	addi a1,a1,2		    		# frame_buffer + 2 = sync, pid, data starts at 3rd byte 
     	li a2, 8                    # a2 = length
     	call lin_checksum           # Returns calculated in a0
         	
@@ -610,16 +582,16 @@ checksum_ok:
 ############################################################################################################
 
 lin_checksum:
-	addi sp,sp,-24
-	sw ra,0(sp)
-	sw a1,4(sp)
-	sw t0,8(sp)
-	sw t1,12(sp)
-	sw t2,16(sp)			
-	sw tp,20(sp)			# received CS pushed to stack
+		addi sp,sp,-24
+		sw ra,0(sp)
+		sw a1,4(sp)
+		sw t0,8(sp)
+		sw t1,12(sp)
+		sw t2,16(sp)			
+		sw tp,20(sp)				   # received CS pushed to stack
 
-	mv      t0, a0                 # sum = PID
-	li      t1, 0                  # i = 0
+		mv      t0, a0                 # sum = PID
+		li      t1, 0                  # i = 0
 step1:  beq     t1, a2, step2          # if i == len, done
         lbu     t2, 0(a1)              # t2 = data[i]
     	add     t0, t0, t2
@@ -632,93 +604,94 @@ step3:  addi    a1, a1, 1
 step2:  not     t0, t0                 # invert
     	andi    a0, t0, 0xFF           # return lower 8 bits
 
-	lw tp,20(sp)			# received CS popped from stack
-	lw t2,16(sp)
-	lw t1,12(sp)
-	lw t0,8(sp)
-	lw a1,4(sp)
-	lw ra,0(sp)
+		lw tp,20(sp)				   # received CS popped from stack
+		lw t2,16(sp)
+		lw t1,12(sp)
+		lw t0,8(sp)
+		lw a1,4(sp)
+		lw ra,0(sp)
     	ret
 
 ###################################################################
 	
 USART_TX:
-	addi sp,sp,-16			# add space in stack
-	sw ra,0(sp)			# push ra
-	sw x7,4(sp)			# push x7
-	sw x10,8(sp)			# push x10
-	sw x11,12(sp)			# push x11
+		addi sp,sp,-16			# add space in stack
+		sw ra,0(sp)				# push ra
+		sw x7,4(sp)				# push x7
+		sw x10,8(sp)			# push x10
+		sw x11,12(sp)			# push x11
 TX_loop:
-	la x10,R32_USART_STATR		# load address of usart status register
-	lw x11,0(x10)			# load contents of status register in x11
-	andi x11,x11,(1<<7)		# mask out 7th bit, transmit buffer empty flag
-	beqz x11,TX_loop		# if 0 transmit buffer full, wait until bit is set
-	#li x8,0x30
-	mv x7,x8			# move byte in x8(s0) to x7(t2) ( call USART_TX with byte in x8)
-	la x10,R32_USART_DATAR		# x10 has the address of data register
-	sb x7,0(x10)			# store byte in x7 to data register
+		la x10,R32_USART_STATR	# load address of usart status register
+		lw x11,0(x10)			# load contents of status register in x11
+		andi x11,x11,(1<<7)		# mask out 7th bit, transmit buffer empty flag
+		beqz x11,TX_loop		# if 0 transmit buffer full, wait until bit is set
+		#li x8,0x30
+		mv x7,x8				# move byte in x8(s0) to x7(t2) ( call USART_TX with byte in x8)
+		la x10,R32_USART_DATAR	# x10 has the address of data register
+		sb x7,0(x10)			# store byte in x7 to data register
 TC_check:
-	la x10,R32_USART_STATR		# get contents of status register again
-	lw x11,0(x10)
-	andi x11,x11,(1<<6)		# check transmit complete bit
-	beqz x11,TC_check		# wait if bit is 0 , when transmit complete = 1
+		la x10,R32_USART_STATR	# get contents of status register again
+		lw x11,0(x10)
+		andi x11,x11,(1<<6)		# check transmit complete bit
+		beqz x11,TC_check		# wait if bit is 0 , when transmit complete = 1
 		
-	lw x11,12(sp)			# pop x11
-	lw x10,8(sp)			# pop x10
-	lw x7,4(sp)			# pop x7
-	lw ra,0(sp)			# pop ra
-	addi sp,sp,16			# set SP back 16 bytes
-	ret				# return to caller
+		lw x11,12(sp)			# pop x11
+		lw x10,8(sp)			# pop x10
+		lw x7,4(sp)				# pop x7
+		lw ra,0(sp)				# pop ra
+		addi sp,sp,16			# set SP back 16 bytes
+		ret						# return to caller
 
  
 ################################################################################
 #Helper: Read one byte from UART (polling)
 
 read_byte:
-	addi sp,sp,-8
-	sw ra,0(sp)
-	sw a1,4(sp)
+		addi sp,sp,-8
+		sw ra,0(sp)
+		sw a1,4(sp)
 rb_loop:
-	la a0,R32_USART_STATR
-	lw a1,0(a0)
-	andi a1,a1, RXNE		# RXNE=0x20
-	beqz a1,rb_loop       		# Wait until RXNE == 1
-	la a0,R32_USART_DATAR  		# Read the byte into a0
-	lw a1,4(sp)
-	lw ra,0(sp)
-	addi sp,sp,8
-	ret
+		la a0,R32_USART_STATR
+		lw a1,0(a0)
+		andi a1,a1, RXNE			# RXNE=0x20
+		beqz a1,rb_loop       		# Wait until RXNE == 1
+		la a0,R32_USART_DATAR  		# Read the byte into a0
+		lbu a0,0(a0)				# byte in a0
+		lw a1,4(sp)
+		lw ra,0(sp)
+		addi sp,sp,8
+		ret
 ###################################################################################
 display_frame:
-	addi sp,sp,-16
-	sw ra,0(sp)
-	sw s1,4(sp)
-	sw a0,8(sp)
-	sw s0,12(sp)
+		addi sp,sp,-16
+		sw ra,0(sp)
+		sw s1,4(sp)
+		sw a0,8(sp)
+		sw s0,12(sp)
 
-	li s1,11			# total number of bytes to transmit -sync,pid,data(8),CS
-	la x10,frame_buffer		# load address of label "name" to x10, string to be transmitted
+		li s1,11				# total number of bytes to transmit -sync,pid,data(8),CS
+		la x10,frame_buffer		# load address of label "name" to x10, string to be transmitted
 frame_loop:
-	lbu x8,0(x10)			# 
-	call print_hex_byte
-	li x8, 0x20             	# Load space character " "
-	call USART_TX			# call subroutine USART_TX to transmit byte
-	addi x10,x10,1			# 
-	addi s1,s1,-1			#
-	beqz s1,frame_end		# 
-	j frame_loop			# 
+		lbu x8,0(x10)			# 
+		call print_hex_byte
+		li x8, 0x20             # Load space character " "
+		call USART_TX			# call subroutine USART_TX to transmit byte
+		addi x10,x10,1			# 
+		addi s1,s1,-1			#
+		beqz s1,frame_end		# 
+		j frame_loop			# 
 frame_end:
 	# Print New Line at end of frame
-    	li x8, 0x0D             	# \r
+    	li x8, 0x0D         	# \r
     	call USART_TX
-    	li x8, 0x0A             	# \n
+    	li x8, 0x0A         	# \n
     	call USART_TX
-	lw s0,12(sp)
-	lw a0,8(sp)
-	lw s1,4(sp)
-	lw ra,0(sp)
-	addi sp,sp,16
-	ret
+		lw s0,12(sp)
+		lw a0,8(sp)
+		lw s1,4(sp)
+		lw ra,0(sp)
+		addi sp,sp,16
+		ret
 ######################################################################################
 # Input: x8 = Byte to print as Hex
 # Uses: x7, x8, x9
@@ -729,7 +702,7 @@ print_hex_byte:
     	sw x7, 8(sp)
     	sw x9,12(sp)
 
-   	 mv x9, x8               # Copy to x9
+   	 	mv x9, x8               # Copy to x9
     
     	# Process High Nibble
     	srli x8, x9, 4          # Shift right 4 bits
@@ -751,15 +724,15 @@ print_hex_byte:
 nibble_to_ascii:
     	addi sp, sp, -12
     	sw ra, 0(sp)
-	sw x7,4(sp)
-	sw x8,8(sp)
+		sw x7,4(sp)
+		sw x8,8(sp)
     	li x7, 10
     	blt x8, x7, is_digit
     	addi x8, x8, 7          # Offset for A-F
 is_digit:
     	addi x8, x8, 48         # Add ASCII '0'
-	lw x8,8(sp)
-	lw x7,4(sp)
+		lw x0,8(sp)				# loading original will change x8
+		lw x7,4(sp)
     	lw ra, 0(sp)
     	addi sp, sp, 12
     	ret
@@ -795,7 +768,7 @@ delay1ms:
 	addi sp,sp,-8 			# push RA
 	sw ra,0(sp) 			# push RA
 	sw t1,4(sp) 
-	li t1,2010 			# load an arbitarary value 20000000 to t1 register 
+	li t1,2010 				# load an arbitarary value 20000000 to t1 register 
 loop1ms:
 	addi t1,t1,-1 			# subtract 1 from t1
 	bne t1,zero,loop1ms 		# if t1 not equal to 0 branch to label loop
@@ -811,7 +784,7 @@ delay10ms:
 	li t1,20100 			# load an arbitarary value 20000000 to t1 register 
 loop10ms:
 	addi t1,t1,-1 			# subtract 1 from t1
-	bne t1,zero,loop10ms 		# if t1 not equal to 0 branch to label loop
+	bne t1,zero,loop10ms 	# if t1 not equal to 0 branch to label loop
 	lw t1,4(sp)
 	lw ra,0(sp) 			# POP RA
 	addi sp,sp,8 			# pop RA
@@ -824,7 +797,7 @@ delay50ms:
 	li t1,100500 			# load an arbitrary value 20000000 to t1 register 
 loop50ms:
 	addi t1,t1,-1 			# subtract 1 from t1
-	bne t1,zero,loop50ms 		# if t1 not equal to 0 branch to label loop
+	bne t1,zero,loop50ms 	# if t1 not equal to 0 branch to label loop
 	lw t1,4(sp)
 	lw ra,0(sp) 			# POP RA
 	addi sp,sp,8 			# pop RA
@@ -834,10 +807,10 @@ delay10us:
 	addi sp,sp,-8 			# push RA
 	sw ra,0(sp) 			# push RA
 	sw t1,4(sp) 
-	li t1,105			# load an arbitrary value 20000000 to t1 register 
+	li t1,105				# load an arbitrary value 20000000 to t1 register 
 loop10us:
 	addi t1,t1,-1 			# subtract 1 from t1
-	bne t1,zero,loop10us 		# if t1 not equal to 0 branch to label loop
+	bne t1,zero,loop10us 	# if t1 not equal to 0 branch to label loop
 	lw t1,4(sp)
 	lw ra,0(sp) 			# POP RA
 	addi sp,sp,8 			# pop RA
@@ -861,6 +834,6 @@ loopus:
 .section .rodata
 .global message
 
-message1: .asciz "CH32V003 LIN SNIFFER "
+message1: .asciz "CH32V003 LIN SNIFFER\r\n "
 
 
