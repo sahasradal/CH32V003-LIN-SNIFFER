@@ -563,9 +563,9 @@ data_loop:
     	# 5. Calculate and Compare
     	mv a0, a5                   # a0 = PID for checksum
     	la a1, frame_buffer         # a1 = data pointer
-	addi a1,a1,2		    		# frame_buffer + 2 = sync, pid, data starts at 3rd byte 
+		addi a1,a1,2		    	# frame_buffer + 2 = sync, pid, data starts at 3rd byte 
     	li a2, 8                    # a2 = length
-    	call lin_checksum           # Returns calculated in a0
+    	call lin_enhanced_checksum  # Returns calculated in a0
         	
     	beq a0, tp, checksum_ok     # Assuming tp held rx_checksum temporarily
     	j wait_break
@@ -612,7 +612,40 @@ step2:  not     t0, t0                 # invert
 		lw ra,0(sp)
     	ret
 
-###################################################################
+
+################################################################################
+# LIN 2.x Enhanced Checksum
+# Input: a0 = PID, a1 = Pointer to Data, a2 = Data Length (8)
+# Output: a0 = Checksum byte
+################################################################################
+lin_enhanced_checksum:
+    #  use t0 for the running sum
+    mv t0, a0               # Start with the PID
+    li t1, 0                # Index i = 0
+
+cs_loop:
+    beq t1, a2, cs_done     # If i == length, finish
+    lbu t2, 0(a1)           # Load data byte
+    add t0, t0, t2          # Add to sum
+    
+    # Check for carry (Sum > 255)
+    li t3, 0xFF
+    bleu t0, t3, cs_next    # If sum <= 255, no carry
+    
+    # Handle Carry: sum = (sum & 0xFF) + 1
+    andi t0, t0, 0xFF
+    addi t0, t0, 1
+
+cs_next:
+    addi a1, a1, 1          # Move to next data byte
+    addi t1, t1, 1          # i++
+    j cs_loop
+
+cs_done:
+    not t0, t0              # Bitwise NOT (Invert)
+    andi a0, t0, 0xFF       # Return only the lower 8 bits
+    ret
+#####################################################################################
 	
 USART_TX:
 		addi sp,sp,-16			# add space in stack
@@ -745,7 +778,7 @@ delay10S:
 	li t1,20100101 			# load an arbitarary value 20000000 to t1 register 
 loop10S:
 	addi t1,t1,-1 			# subtract 1 from t1
-	bne t1,zero,loop10S 		# if t1 not equal to 0 branch to label loop
+	bne t1,zero,loop10S 	# if t1 not equal to 0 branch to label loop
 	lw t1,4(sp)
 	lw ra,0(sp) 			# POP RA
 	addi sp,sp,8 			# pop RA
